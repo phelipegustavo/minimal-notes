@@ -1,27 +1,32 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+  <AppHeader />
+  <Desktop />
 </template>
 
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component';
-import HelloWorld from './components/HelloWorld.vue';
+import AppHeader from './components/AppHeader.vue';
+import Desktop from './components/Desktop.vue';
 
 @Options({
   components: {
-    HelloWorld,
+    AppHeader,
+    Desktop,
   },
 })
 export default class App extends Vue {}
 </script>
 
-<style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+<style lang="sass">
+*
+  padding: 0
+  margin: 0
+  box-sizing: border-box
+  font-family: $font
+
+#app
+  min-height: 100vh
+  display: flex
+  flex-direction: column
+  overflow: hidden
 </style>
