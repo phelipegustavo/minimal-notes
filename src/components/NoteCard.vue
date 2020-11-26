@@ -3,7 +3,6 @@
     tabindex="0"
     class="note-card"
     :style="cardStyle"
-    @resize="onResize"
   >
     <div
       class="note-bar"
@@ -96,10 +95,6 @@ export default class NoteCard extends Vue {
       const img = document.createElement('img');
       e.dataTransfer.setDragImage(img, 0, 0);
     }
-  }
-
-  onResize = (e: UIEvent) => {
-    console.log('RESIZE', e);
   }
 
   async handleNote(note: Types.Note) {
