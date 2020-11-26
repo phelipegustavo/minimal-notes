@@ -3,6 +3,7 @@
     tabindex="0"
     class="note-card"
     :style="cardStyle"
+    @resize="onResize"
   >
     <div
       class="note-bar"
@@ -11,61 +12,78 @@
       @dragstart="onDragStart"
       @drag="onDrag"
     >
-      {{ note.title }}
+      <span>{{ note.title }}</span>
+      <span v-if="isSyncing">Sync...</span>
     </div>
     <div class="note-content">
-      <textarea
-        class="note-editor"
-        name="note"
-        placeholder="Type your note..."
-        v-model="note.content"
-        :style="editorStyle"
-      ></textarea>
+      <NoteEditor
+        v-model.lazy="note.content"
+        :editor-style="editorStyle"
+      ></NoteEditor>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { computed } from 'vue';
 import { Options, Vue } from 'vue-class-component';
-
-interface CardStyle {
-  borderColor: string;
-  top: string;
-  left: string;
-}
+import { mapActions } from 'vuex';
+import { Note } from '@/types/types.d';
+import { CardStyle, BarStyle, EditorStyle } from '@/types/styles.d';
+import NoteEditor from './NoteEditor.vue';
 
 @Options({
+  components: {
+    NoteEditor,
+  },
   props: {
     note: Object,
+  },
+  methods: {
+    ...mapActions('notes', [
+      'updateNote',
+    ]),
+  },
+  watch: {
+    note: {
+      deep: true,
+      handler(note: Note) {
+        this.handleNote(note);
+      },
+    },
   },
 })
 export default class NoteCard extends Vue {
   note!: Types.Note;
 
+  updateNote!: (note: Types.Note) => Promise<Types.Note>;
+
   appBarHeight = 96;
 
-  noteColor = computed((): string => this.note.color);
+  isSyncing = false;
 
-  postionTop = computed((): string => `calc(${this.note.y}px - 6em)`);
+  syncInterval?: number;
 
-  postionLeft = computed((): string => `${this.note.x}px`);
+  get cardStyle(): CardStyle {
+    return {
+      borderColor: this.note.color,
+      top: `calc(${this.note.y}px - 6em)`,
+      left: `${this.note.x}px`,
+    };
+  }
 
-  cardStyle = computed(() => ({
-    borderColor: this.noteColor,
-    top: this.postionTop,
-    left: this.postionLeft,
-  }));
+  get barStyle(): BarStyle {
+    return {
+      backgroundColor: this.note.color,
+    };
+  }
 
-  barStyle = computed(() => ({
-    backgroundColor: this.noteColor,
-  }));
+  get editorStyle(): EditorStyle {
+    return {
+      borderColor: this.note.color,
+    };
+  }
 
-  editorStyle = computed(() => ({
-    borderColor: this.noteColor,
-  }));
-
-  onDrag = (e: DragEvent): void => {
+  onDrag(e: DragEvent): void {
     const { clientX, clientY } = e;
     if (clientX && clientY && clientY > this.appBarHeight) {
       this.note.x = clientX;
@@ -78,6 +96,32 @@ export default class NoteCard extends Vue {
       const img = document.createElement('img');
       e.dataTransfer.setDragImage(img, 0, 0);
     }
+  }
+
+  onResize = (e: UIEvent) => {
+    console.log('RESIZE', e);
+  }
+
+  async handleNote(note: Types.Note) {
+    try {
+      await this.debounceNoteUpdate();
+      this.isSyncing = true;
+      setTimeout(async () => {
+        await this.updateNote(note);
+        this.isSyncing = false;
+      }, 100);
+    } catch (e) {
+      this.isSyncing = false;
+    }
+  }
+
+  debounceNoteUpdate(): Promise<void> {
+    return new Promise((resolve: Function) => {
+      if (this.syncInterval) {
+        clearTimeout(this.syncInterval);
+      }
+      this.syncInterval = setTimeout(() => resolve(), 800);
+    });
   }
 }
 
@@ -102,10 +146,11 @@ export default class NoteCard extends Vue {
   box-shadow: 5px 15px 30px rgba(0, 0, 0, .1)
 
 .note-bar
+  display: flex
+  justify-content: space-between
   background-color: $primary
   padding: .5rem
   color: $text
-  transform: blur(10px)
   cursor: move
 
 .note-content
@@ -113,13 +158,4 @@ export default class NoteCard extends Vue {
   position: relative
   flex-grow: 1
 
-.note-editor
-  background-color: $background
-  color: $text-darken
-  padding: 1rem
-  resize: none
-  width: 100%
-  height: 100%
-  border: 1px
-  border-style: solid
 </style>

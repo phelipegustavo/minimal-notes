@@ -13,7 +13,8 @@
 
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
+import { Note } from '@/types/types.d';
 import NoteCard from './NoteCard.vue';
 
 @Options({
@@ -24,12 +25,20 @@ import NoteCard from './NoteCard.vue';
     ...mapGetters('notes', [
       'allNotes',
     ]),
+    ...mapActions('notes', [
+      'listNotes',
+    ]),
+  },
+  async mounted() {
+    await this.listNotes;
   },
 })
 export default class Desktop extends Vue {
   backgroundImage = 'https://picsum.photos/1280/720'
 
-  allNotes!: () => Array<Types.Note>;
+  allNotes!: () => Array<Note>;
+
+  listNotes!: Function;
 }
 </script>
 
