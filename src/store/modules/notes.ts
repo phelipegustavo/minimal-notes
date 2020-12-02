@@ -1,4 +1,9 @@
-import { update, list } from '../../api/note';
+import {
+  update,
+  list,
+  remove,
+  store,
+} from '../../api/note';
 
 interface Context {
   commit: Function;
@@ -13,9 +18,13 @@ const noteState = (): NotesSate => ({
 });
 
 const actions = {
-  listNotes: ({ commit }: Context) => {
-    const notes = list();
-    commit('setNotes', notes);
+  listNotes: async ({ commit }: Context) => {
+    try {
+      const notes = await list();
+      commit('setNotes', notes);
+    } catch (e) {
+      commit('setNotes', []);
+    }
   },
   addNewNote: ({ commit }: Context) => {
     const colors = ['#00c853', '#2962ff', '#263238', '#4a148c', '#ff1744'];
@@ -27,17 +36,29 @@ const actions = {
       content: '',
       x: 10,
       y: 100,
+      height: 300,
+      width: 400,
     };
+    store(note);
     commit('pushNote', note);
   },
-  updateNote: (context: Context, payload: Types.Note): Promise<boolean> => (
-    Promise.resolve(update(payload))
+  updateNote: (context: Context, payload: Types.Note): Promise<object|string> => (
+    update(payload)
   ),
+  removeNote: async ({ commit }: Context, payload: Types.Note) => {
+    await remove(payload.id);
+    commit('deleteNote', payload);
+  },
 };
 
 const mutations = {
   pushNote({ notes }: NotesSate, payload: Types.Note): void {
     notes.push(payload);
+  },
+  deleteNote(state: NotesSate, payload: Types.Note): void {
+    state.notes = state.notes.filter((noteItem: Types.Note) => (
+      noteItem.id !== payload.id
+    ));
   },
   setNotes(state: NotesSate, payload: Array<Types.Note>): void {
     state.notes = payload;

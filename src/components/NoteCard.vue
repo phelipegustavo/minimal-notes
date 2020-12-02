@@ -3,6 +3,8 @@
     tabindex="0"
     class="note-card"
     :style="cardStyle"
+    v-resize
+    @resize="onResize"
   >
     <div
       class="note-bar"
@@ -12,7 +14,25 @@
       @drag="onDrag"
     >
       <span>{{ note.title }}</span>
-      <span v-if="isSyncing">Sync...</span>
+      <div class="actions">
+        <span v-if="isSyncing">
+          <IconBase
+            style="color: #fff"
+            :size="18"
+            :path="syncIcon"
+          ></IconBase>
+        </span>
+        <button
+          class="btn-remove"
+          @click="removeNote(note)"
+        >
+          <IconBase
+            style="color: #fff"
+            :size="18"
+            :path="deleteIcon"
+          ></IconBase>
+        </button>
+      </div>
     </div>
     <div class="note-content">
       <NoteEditor
@@ -25,14 +45,21 @@
 
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component';
+import { mdiTrashCan, mdiSync } from '@mdi/js';
 import { mapActions } from 'vuex';
 import { Note } from '@/types/types.d';
 import { CardStyle, BarStyle, EditorStyle } from '@/types/styles.d';
+import Resize from '@/directives/resize';
+import IconBase from '@/components/base/IconBase.vue';
 import NoteEditor from './NoteEditor.vue';
 
 @Options({
   components: {
+    IconBase,
     NoteEditor,
+  },
+  directives: {
+    Resize,
   },
   props: {
     note: Object,
@@ -40,6 +67,7 @@ import NoteEditor from './NoteEditor.vue';
   methods: {
     ...mapActions('notes', [
       'updateNote',
+      'removeNote',
     ]),
   },
   watch: {
@@ -62,11 +90,17 @@ export default class NoteCard extends Vue {
 
   syncInterval?: number;
 
+  deleteIcon = mdiTrashCan;
+
+  syncIcon = mdiSync;
+
   get cardStyle(): CardStyle {
     return {
       borderColor: this.note.color,
       top: `calc(${this.note.y}px - 6em)`,
       left: `${this.note.x}px`,
+      width: `${this.note.width}px`,
+      height: `${this.note.height}px`,
     };
   }
 
@@ -95,6 +129,11 @@ export default class NoteCard extends Vue {
       const img = document.createElement('img');
       e.dataTransfer.setDragImage(img, 0, 0);
     }
+  }
+
+  onResize({ detail }: CustomEvent): void {
+    this.note.height = detail.height;
+    this.note.width = detail.width;
   }
 
   async handleNote(note: Types.Note) {
@@ -153,4 +192,10 @@ export default class NoteCard extends Vue {
   position: relative
   flex-grow: 1
 
+.btn-remove
+  border: none
+  background-color: transparent
+  color: $text
+  padding: .2rem
+  margin: 0 3px
 </style>

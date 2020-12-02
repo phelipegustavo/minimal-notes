@@ -1,97 +1,53 @@
-interface StorageService {
-  getData: Function;
-  setData: Function;
-  clearData: Function;
+import StorageService from '../services/Storage';
+
+const storage = new StorageService('note');
+
+async function findNote(id: number): Promise<object|string> {
+  const data = await storage.getData();
+  const notes = Array.isArray(data) ? data : [];
+  return notes && notes
+    .find(({ id: noteId }: Types.Note) => (
+      noteId === id
+    ));
 }
 
-const StorageService = (key: string): StorageService => {
-  function getData() {
-    const data = localStorage.getItem(key);
-    if (data) {
-      return JSON.parse(data);
-    }
-    return false;
+export async function store(note: Types.Note): Promise<object|string> {
+  if (await findNote(note.id)) {
+    return Promise.reject(new Error('This note already exists'));
   }
-
-  function setData(data: object|Array<object>) {
-    try {
-      const stringData = JSON.stringify(data);
-      localStorage.setItem(key, stringData);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function clearData(): boolean {
-    try {
-      localStorage.removeItem(key);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  return {
-    getData,
-    setData,
-    clearData,
-  };
-};
-
-const storage = StorageService('note');
-
-function findNote(id: number) {
-  try {
-    const data = storage.getData();
-    return data && data
-      .find(({ id: noteId }: Types.Note) => (
-        noteId === id
-      ));
-  } catch (e) {
-    return false;
-  }
+  const data = await storage.getData();
+  const notes = Array.isArray(data) ? data : [];
+  return storage.setData([...notes, note]);
 }
 
-export function store(note: Types.Note): boolean {
-  if (!findNote(note.id)) {
-    const data = storage.getData();
-    const notes = Array.isArray(data) ? data : [];
-    return storage.setData([...notes, note]);
-  }
-  return false;
-}
-
-export function update(note: Types.Note): boolean {
-  const data = storage.getData();
+export async function update(note: Types.Note): Promise<object|string> {
+  const data = await storage.getData();
   const notes = Array.isArray(data) ? data : [];
   const updatedNotes = notes
     .map((noteItem: Types.Note) => (
       noteItem.id === note.id ? note : noteItem
     ));
-  storage.setData(updatedNotes);
-  if (!findNote(note.id)) {
-    return store(note);
-  }
-  return true;
+  return storage.setData(updatedNotes);
 }
 
-export function get(id: number) {
+export function get(id: number): Promise<object|string> {
   return findNote(id);
 }
 
-export function list() {
-  const data = storage.getData();
+export async function list(): Promise<object> {
+  const data = await storage.getData();
   const notes = Array.isArray(data) ? data : [];
   return notes;
 }
 
-export function remove(id: number) {
-  const notes = storage.getData()
+export async function remove(id: number): Promise<object|string> {
+  const data = await storage.getData();
+  const notes = Array.isArray(data) ? data : [];
+  const filterNotes = notes
     .filter((noteItem: Types.Note) => (
       noteItem.id !== id
     ));
-  storage.setData(notes);
+  return storage.setData(filterNotes);
 }
 
 export default {
