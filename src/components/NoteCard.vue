@@ -15,13 +15,15 @@
     >
       <span>{{ note.title }}</span>
       <div class="actions">
-        <span v-if="isSyncing">
-          <IconBase
-            style="color: #fff"
-            :size="18"
-            :path="syncIcon"
-          ></IconBase>
-        </span>
+        <transition name="sync">
+          <span v-if="isSyncing">
+            <IconBase
+              style="color: #fff"
+              :size="18"
+              :path="syncIcon"
+            ></IconBase>
+          </span>
+        </transition>
         <button
           class="btn-remove"
           @click="removeNote(note)"
@@ -143,7 +145,7 @@ export default class NoteCard extends Vue {
       setTimeout(async () => {
         await this.updateNote(note);
         this.isSyncing = false;
-      }, 100);
+      }, 1000);
     } catch (e) {
       this.isSyncing = false;
     }
@@ -154,7 +156,7 @@ export default class NoteCard extends Vue {
       if (this.syncInterval) {
         clearTimeout(this.syncInterval);
       }
-      this.syncInterval = setTimeout(() => resolve(), 800);
+      this.syncInterval = setTimeout(() => resolve(), 1500);
     });
   }
 }
@@ -162,6 +164,14 @@ export default class NoteCard extends Vue {
 </script>
 
 <style lang="sass" scoped>
+.sync-enter-active,
+.sync-leave-active
+  transition: opacity .5s ease
+
+.sync-enter-from,
+.sync-leave-to
+  opacity: 0
+
 .note-card
   background-color: $background
   min-width: 300px
