@@ -29,6 +29,11 @@ interface ResizeObserverEntryBoxSize {
   inlineSize: number;
 }
 
+export interface Sizes {
+  width: number;
+  height: number;
+}
+
 const observe = (el: Element) => {
   const resizeObserver = new ResizeObserver(
     (entries: ResizeObserverEntry[]): void => {
@@ -38,7 +43,7 @@ const observe = (el: Element) => {
         detail: {
           height,
           width,
-        },
+        } as Sizes,
       });
       el.dispatchEvent(event);
     },

@@ -18,6 +18,7 @@
         <transition name="sync">
           <span v-if="isSyncing">
             <IconBase
+              class="sync"
               style="color: #fff"
               :size="18"
               :path="syncIcon"
@@ -51,7 +52,7 @@ import { mdiTrashCan, mdiSync } from '@mdi/js';
 import { mapActions } from 'vuex';
 import { Note } from '@/types/types.d';
 import { CardStyle, BarStyle, EditorStyle } from '@/types/styles.d';
-import Resize from '@/directives/resize';
+import Resize, { Sizes } from '@/directives/resize';
 import IconBase from '@/components/base/IconBase.vue';
 import NoteEditor from './NoteEditor.vue';
 
@@ -65,6 +66,7 @@ import NoteEditor from './NoteEditor.vue';
   },
   props: {
     note: Object,
+    desktopSizes: Object,
   },
   methods: {
     ...mapActions('notes', [
@@ -84,6 +86,8 @@ import NoteEditor from './NoteEditor.vue';
 export default class NoteCard extends Vue {
   note!: Types.Note;
 
+  desktopSizes!: Sizes;
+
   updateNote!: (note: Types.Note) => Promise<Types.Note>;
 
   appBarHeight = 96;
@@ -97,10 +101,12 @@ export default class NoteCard extends Vue {
   syncIcon = mdiSync;
 
   get cardStyle(): CardStyle {
+    const top = this.note.y * this.desktopSizes.height;
+    const left = this.note.x * this.desktopSizes.width;
     return {
       borderColor: this.note.color,
-      top: `calc(${this.note.y}px - 6em)`,
-      left: `${this.note.x}px`,
+      top: `calc(${top}px)`,
+      left: `${left}px`,
       width: `${this.note.width}px`,
       height: `${this.note.height}px`,
     };
@@ -118,11 +124,12 @@ export default class NoteCard extends Vue {
     };
   }
 
-  onDrag(e: DragEvent): void {
-    const { clientX, clientY } = e;
-    if (clientX && clientY && clientY > this.appBarHeight) {
-      this.note.x = clientX;
-      this.note.y = clientY;
+  onDrag({ clientX, clientY }: DragEvent): void {
+    const x = clientX;
+    const y = clientY - this.appBarHeight;
+    if (clientX > 0 && y > 0) {
+      this.note.x = x / this.desktopSizes.width;
+      this.note.y = y / this.desktopSizes.height;
     }
   }
 
@@ -145,7 +152,7 @@ export default class NoteCard extends Vue {
       setTimeout(async () => {
         await this.updateNote(note);
         this.isSyncing = false;
-      }, 1000);
+      }, 500);
     } catch (e) {
       this.isSyncing = false;
     }
@@ -156,7 +163,7 @@ export default class NoteCard extends Vue {
       if (this.syncInterval) {
         clearTimeout(this.syncInterval);
       }
-      this.syncInterval = setTimeout(() => resolve(), 1500);
+      this.syncInterval = setTimeout(() => resolve(), 1000);
     });
   }
 }
@@ -164,6 +171,16 @@ export default class NoteCard extends Vue {
 </script>
 
 <style lang="sass" scoped>
+.sync
+  display: inline-block
+  animation: rotate infinite linear 1s
+
+@keyframes rotate
+  from
+    transform: rotate(0deg)
+  to
+    transform: rotate(360deg)
+
 .sync-enter-active,
 .sync-leave-active
   transition: opacity .5s ease

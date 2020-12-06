@@ -2,12 +2,16 @@
   <div
     class="desk"
     :style="{ 'background-image': `url(${backgroundImage})` }"
+    ref="desktop"
+    v-resize
+    @resize="onResize"
   >
     <transition-group name="note-card">
       <NoteCard
         v-for="note in allNotes"
         :key="note.id"
         :note="note"
+        :desktop-sizes="desktopSizes"
       ></NoteCard>
     </transition-group>
   </div>
@@ -17,11 +21,15 @@
 import { Options, Vue } from 'vue-class-component';
 import { mapActions, mapGetters } from 'vuex';
 import { Note } from '@/types/types.d';
+import Resize from '@/directives/resize';
 import NoteCard from './NoteCard.vue';
 
 @Options({
   components: {
     NoteCard,
+  },
+  directives: {
+    Resize,
   },
   computed: {
     ...mapGetters('notes', [
@@ -38,9 +46,29 @@ import NoteCard from './NoteCard.vue';
 export default class Desktop extends Vue {
   backgroundImage = 'https://picsum.photos/1280/720'
 
+  $refs!: {
+    desktop: HTMLDivElement;
+  }
+
+  desktopSizes = {
+    width: this.desktop?.clientWidth,
+    height: this.desktop?.clientHeight,
+  }
+
   allNotes!: () => Array<Note>;
 
   listNotes!: Function;
+
+  get desktop() {
+    return this.$refs?.desktop;
+  }
+
+  onResize({ detail }: CustomEvent): void {
+    this.desktopSizes = {
+      width: detail.width,
+      height: detail.height,
+    };
+  }
 }
 </script>
 

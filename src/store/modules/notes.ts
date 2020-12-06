@@ -34,8 +34,8 @@ const actions = {
       color: colors[randomIndex],
       title: 'Note',
       content: '',
-      x: 10,
-      y: 100,
+      x: 0.1,
+      y: 0.1,
       height: 300,
       width: 400,
     };
